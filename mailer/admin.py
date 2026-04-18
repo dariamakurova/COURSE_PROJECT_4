@@ -1,18 +1,18 @@
 from django.contrib import admin
+from .models import Client, Message, Mailing
 
-from mailer.models import Client, Message
-
-
-# Register your models here.
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ("email", "name", "comment")
-    list_filter = ("name",)
-    search_fields = ("name", "email")
-
+    list_display = ['name', 'email', 'comment']
+    search_fields = ['name', 'email']
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ("title", "body")
-    list_filter = ("title",)
-    search_fields = ("title",)
+    list_display = ['title', 'body']
+    search_fields = ['title']
+
+@admin.register(Mailing)
+class MailingAdmin(admin.ModelAdmin):
+    list_display = ['id', 'start_date', 'end_date', 'status', 'message']
+    filter_horizontal = ['recipients']
+    list_filter = ['status']
