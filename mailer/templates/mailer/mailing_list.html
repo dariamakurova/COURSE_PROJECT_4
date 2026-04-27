@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Список рассылок{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="bi bi-send"></i> Рассылки
+    </h1>
+    <a href="{% url 'mailer:mailing_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Создать рассылку
+    </a>
+</div>
+
+{% if mailings %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Тема сообщения</th>
+                <th>Дата начала</th>
+                <th>Дата окончания</th>
+                <th>Статус</th>
+                <th>Получателей</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mailing in mailings %}
+            <tr>
+                <td class="fw-bold">#{{ mailing.id }}</td>
+                <td>{{ mailing.message.title|default:"<span class='text-muted'>Не указано</span>" }}</td>
+                <td>{{ mailing.start_date|date:"d.m.Y H:i" }}</td>
+                <td>{{ mailing.end_date|date:"d.m.Y H:i" }}</td>
+                <td>
+                    {% if mailing.status == 'FN' %}
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-check-circle"></i> {{ mailing.get_status_display }}
+                        </span>
+                    {% elif mailing.status == 'AC' %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-play-circle"></i> {{ mailing.get_status_display }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning">
+                            <i class="bi bi-clock"></i> {{ mailing.get_status_display }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-info">
+                        <i class="bi bi-people"></i> {{ mailing.recipients.count }}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'mailer:mailing_detail' mailing.pk %}" class="btn btn-outline-info" title="Просмотр">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'mailer:mailing_update' mailing.pk %}" class="btn btn-outline-warning" title="Редактировать">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'mailer:mailing_delete' mailing.pk %}" class="btn btn-outline-danger" title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info text-center">
+    <i class="bi bi-info-circle"></i> Рассылок пока нет.
+    <a href="{% url 'mailer:mailing_create' %}" class="alert-link">Создайте первую рассылку</a>
+</div>
+{% endif %}
+{% endblock %}

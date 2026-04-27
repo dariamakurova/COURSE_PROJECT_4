@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Рассылка #{{ mailing.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-envelope-paper"></i> Рассылка #{{ mailing.id }}
+                    </h3>
+                    <span class="badge {% if mailing.status == 'FN' %}bg-secondary{% elif mailing.status == 'AC' %}bg-success{% else %}bg-warning{% endif %} fs-6">
+                        <i class="bi {% if mailing.status == 'FN' %}bi-check-circle{% elif mailing.status == 'AC' %}bi-play-circle{% else %}bi-clock{% endif %}"></i>
+                        {{ mailing.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Информация о рассылке -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <label class="text-muted">Дата начала:</label>
+                            <p class="fw-bold">
+                                <i class="bi bi-calendar-event"></i> {{ mailing.start_date|date:"d.m.Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <label class="text-muted">Дата окончания:</label>
+                            <p class="fw-bold">
+                                <i class="bi bi-calendar-x"></i> {{ mailing.end_date|date:"d.m.Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Информация о сообщении -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-envelope"></i> Информация о сообщении
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h5>{{ mailing.message.title|default:"<span class='text-muted'>Без темы</span>" }}</h5>
+                        <hr>
+                        <div class="message-body">
+                            {{ mailing.message.body|default:"<span class='text-muted'>Нет текста сообщения</span>"|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Список получателей -->
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-people"></i> Получатели ({{ mailing.recipients.count }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if mailing.recipients.all %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Ф.И.О.</th>
+                                            <th>Email</th>
+                                            <th>Комментарий</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for client in mailing.recipients.all %}
+                                        <tr>
+                                            <td>{{ client.name }}</td>
+                                            <td>
+                                                <a href="mailto:{{ client.email }}" class="text-decoration-none">
+                                                    {{ client.email }}
+                                                </a>
+                                            </td>
+                                            <td>{{ client.comment|truncatechars:50|default:"—" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center mb-0">
+                                <i class="bi bi-info-circle"></i> Нет получателей
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'mailer:mailing_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Назад к списку
+                    </a>
+                    <div>
+                        <a href="{% url 'mailer:mailing_update' mailing.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </a>
+                        <a href="{% url 'mailer:mailing_delete' mailing.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Удалить
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-box {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .message-body {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
