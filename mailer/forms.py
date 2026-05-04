@@ -21,18 +21,34 @@ class MessageForm(forms.ModelForm):
 class MailingForm(forms.ModelForm):
     """Форма для создания и редактирования рассылки"""
 
+    recipients = forms.ModelMultipleChoiceField(
+        queryset=Client.objects.all(),
+        widget=forms.CheckboxSelectMultiple,  # Используем чекбоксы
+        required=True,
+        label="Получатели"
+    )
+
     class Meta:
         model = Mailing
         fields = ['start_date', 'end_date', 'message', 'recipients']
         widgets = {
-            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'start_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'form-control'
+            }),
+            'end_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'form-control'
+            }),
             'message': forms.Select(attrs={'class': 'form-control'}),
-            'recipients': forms.SelectMultiple(attrs={'class': 'form-control', 'size': 10}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['recipients'].queryset = Client.objects.all().order_by('name')
+        self.fields['recipients'].help_text = "Отметьте клиентов, которые получат рассылку"
+
     def clean(self):
-        """Валидация дат"""
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
@@ -42,10 +58,4 @@ class MailingForm(forms.ModelForm):
                 raise ValidationError(
                     'Дата окончания должна быть позже даты начала рассылки'
                 )
-
-            if end_date < timezone.now():
-                raise ValidationError(
-                    'Дата окончания не может быть в прошлом'
-                )
-
         return cleaned_data

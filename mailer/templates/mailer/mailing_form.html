@@ -4,9 +4,93 @@
     {% if object %}Редактирование рассылки #{{ object.id }}{% else %}Создание рассылки{% endif %}
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Стили для выбора клиентов */
+    .clients-selection {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        background: #f8f9fa;
+    }
+
+    .clients-list {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        background: white;
+    }
+
+    .client-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.2s;
+        cursor: pointer;
+    }
+
+    .client-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .client-item:last-child {
+        border-bottom: none;
+    }
+
+    .client-checkbox {
+        margin-right: 12px;
+        transform: scale(1.1);
+        cursor: pointer;
+    }
+
+    .client-info {
+        display: inline-block;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+
+    .client-name {
+        font-weight: 500;
+        color: #212529;
+    }
+
+    .client-email {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-left: 10px;
+    }
+
+    .client-comment {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 4px;
+        margin-left: 26px;
+    }
+
+    .select-all-btn, .deselect-all-btn {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .select-all-btn:hover, .deselect-all-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .selected-count {
+        font-size: 0.9rem;
+        color: #0d6efd;
+        font-weight: 500;
+    }
+
+    .filter-input {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
                 <h3 class="card-title mb-0">
@@ -15,45 +99,128 @@
                 </h3>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" id="mailingForm">
                     {% csrf_token %}
 
-                    {% for field in form %}
-                    <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                            {{ field.label }}
-                            {% if field.field.required %}
+                    <!-- Дата и время -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-calendar-event"></i> Дата и время начала
                                 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                                <div class="alert alert-danger mt-2">
+                                    {% for error in form.start_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
                             {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-calendar-x"></i> Дата и время окончания
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                                <div class="alert alert-danger mt-2">
+                                    {% for error in form.end_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Сообщение -->
+                    <div class="mb-3">
+                        <label for="{{ form.message.id_for_label }}" class="form-label fw-bold">
+                            <i class="bi bi-envelope"></i> Сообщение
+                            <span class="text-danger">*</span>
                         </label>
-
-                        {% if field.name == 'recipients' %}
-                            <div class="border rounded p-3">
-                                {{ field }}
-                                <small class="form-text text-muted">
-                                    <i class="bi bi-info-circle"></i> {{ field.help_text }}
-                                </small>
-                            </div>
-                        {% else %}
-                            {{ field }}
-                        {% endif %}
-
-                        {% if field.errors %}
+                        {{ form.message }}
+                        {% if form.message.errors %}
                             <div class="alert alert-danger mt-2">
-                                {% for error in field.errors %}
+                                {% for error in form.message.errors %}
                                     {{ error }}
                                 {% endfor %}
                             </div>
                         {% endif %}
-
-                        {% if field.help_text and field.name != 'recipients' %}
-                            <small class="form-text text-muted">{{ field.help_text }}</small>
-                        {% endif %}
+                        <small class="form-text text-muted">
+                            <i class="bi bi-info-circle"></i> Выберите сообщение для рассылки
+                        </small>
                     </div>
-                    {% endfor %}
+
+                    <!-- Выбор получателей с чекбоксами -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-people"></i> Получатели
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <div class="clients-selection">
+                            <!-- Кнопки управления -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary select-all-btn" id="selectAllBtn">
+                                        <i class="bi bi-check-all"></i> Выбрать всех
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary deselect-all-btn" id="deselectAllBtn">
+                                        <i class="bi bi-x-circle"></i> Снять всех
+                                    </button>
+                                </div>
+                                <div class="selected-count">
+                                    <i class="bi bi-check2-circle"></i> Выбрано: <span id="selectedCount">0</span>
+                                </div>
+                            </div>
+
+                            <!-- Поле для поиска -->
+                            <input type="text" id="clientFilter" class="form-control filter-input"
+                                   placeholder="🔍 Фильтр по имени, email или комментарию...">
+
+                            <!-- Список клиентов с чекбоксами -->
+                            <div class="clients-list" id="clientsList">
+                                {% for client in form.recipients.field.queryset %}
+                                <div class="client-item" data-client-id="{{ client.pk }}">
+                                    <input type="checkbox"
+                                           class="client-checkbox"
+                                           value="{{ client.pk }}"
+                                           id="client_{{ client.pk }}"
+                                           name="recipients"
+                                           {% if client in form.recipients.value %}checked{% endif %}>
+                                    <label for="client_{{ client.pk }}" class="client-info">
+                                        <span class="client-name">
+                                            <i class="bi bi-person-circle"></i> {{ client.name }}
+                                        </span>
+                                        <span class="client-email">
+                                            <i class="bi bi-envelope"></i> {{ client.email }}
+                                        </span>
+                                        {% if client.comment %}
+                                            <div class="client-comment">
+                                                <i class="bi bi-chat"></i> {{ client.comment|truncatechars:80 }}
+                                            </div>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-4">
+                                    <i class="bi bi-info-circle"></i> Нет добавленных клиентов.
+                                    <a href="{% url 'mailer:client_create' %}" class="alert-link">Создайте клиента</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <small class="form-text text-muted mt-2 d-block">
+                                <i class="bi bi-info-circle"></i> Отметьте галочками клиентов, которые получат рассылку
+                            </small>
+                        </div>
+                    </div>
 
                     <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'mailer:mailing_list' %}" class="btn btn-secondary">
+                        <a href="{% if object %}{% url 'mailer:mailing_detail' object.pk %}{% else %}{% url 'mailer:mailing_list' %}{% endif %}"
+                           class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Отмена
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -67,32 +234,90 @@
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    input, select, textarea {
-        display: block;
-        width: 100%;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: #212529;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+{% block extra_js %}
+<script>
+    // Получаем элементы
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    const checkboxes = document.querySelectorAll('.client-checkbox');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const filterInput = document.getElementById('clientFilter');
+    const clientItems = document.querySelectorAll('.client-item');
+
+    // Функция обновления счетчика
+    function updateSelectedCount() {
+        const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        selectedCountSpan.textContent = selectedCount;
     }
 
-    select[multiple] {
-        min-height: 150px;
+    // Функция выбора всех
+    function selectAll() {
+        // Показываем только видимые (не отфильтрованные) элементы
+        const visibleCheckboxes = Array.from(checkboxes).filter(cb => {
+            const clientItem = cb.closest('.client-item');
+            return clientItem && clientItem.style.display !== 'none';
+        });
+
+        visibleCheckboxes.forEach(cb => {
+            cb.checked = true;
+        });
+        updateSelectedCount();
     }
 
-    input:focus, select:focus, textarea:focus {
-        color: #212529;
-        background-color: #fff;
-        border-color: #86b7fe;
-        outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+    // Функция снятия всех
+    function deselectAll() {
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+        });
+        updateSelectedCount();
     }
-</style>
+
+    // Функция фильтрации клиентов
+    function filterClients() {
+        const searchTerm = filterInput.value.toLowerCase();
+
+        clientItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // Добавляем обработчики
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', selectAll);
+    }
+
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', deselectAll);
+    }
+
+    // Добавляем обработчик на каждый чекбокс
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+
+    // Обработчик фильтра
+    if (filterInput) {
+        filterInput.addEventListener('input', filterClients);
+    }
+
+    // Инициализация при загрузке
+    updateSelectedCount();
+
+    // Клик по всему блоку клиента для переключения чекбокса
+    clientItems.forEach(item => {
+        const checkbox = item.querySelector('.client-checkbox');
+        item.addEventListener('click', function(e) {
+            // Не срабатывает при клике на сам чекбокс (чтобы не было двойного переключения)
+            if (e.target.type !== 'checkbox') {
+                checkbox.checked = !checkbox.checked;
+                updateSelectedCount();
+            }
+        });
+    });
+</script>
 {% endblock %}

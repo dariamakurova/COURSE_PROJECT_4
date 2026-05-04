@@ -14,7 +14,7 @@ class ClientCreateView(CreateView):
     model = Client
     form_class = ClientForm
     template_name = 'mailer/client_form.html'
-    success_url = reverse_lazy('mailer:main')
+    success_url = reverse_lazy('mailer:client_list')
 
 class ClientUpdateView(UpdateView):
     """Редактрирование клиента"""
@@ -25,7 +25,7 @@ class ClientUpdateView(UpdateView):
     raise_exception = True
 
     def get_success_url(self):
-        return reverse('mailer:client_info', args=[self.kwargs.get('pk')])
+        return reverse('mailer:client_detail', args=[self.kwargs.get('pk')])
 
 class ClientDeleteView(DeleteView):
     """Удаление клиента"""
@@ -41,6 +41,7 @@ class ClientListView(ListView):
     """Список всех клиентов"""
     model = Client
     template_name = 'mailer/client_list.html'
+    context_object_name = 'clients'
 
 
 class ClientDetailView(DetailView):
@@ -103,9 +104,13 @@ class MailingCreateView(CreateView):
         return reverse('mailer:mailing_detail', args=[self.object.pk])
 
     def form_valid(self, form):
-        """При создании статус всегда 'Создана'"""
         form.instance.status = Mailing.Status.CREATED
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['all_clients'] = Client.objects.all().order_by('name')
+        return context
 
 
 class MailingUpdateView(UpdateView):

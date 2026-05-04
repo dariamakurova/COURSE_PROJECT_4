@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление клиента{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Подтверждение удаления
+                </h3>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="bi bi-person-x text-danger" style="font-size: 64px;"></i>
+                </div>
+                <h4>Вы уверены, что хотите удалить клиента?</h4>
+                <p class="lead">{{ client.name }}</p>
+                <p class="text-muted">{{ client.email }}</p>
+
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Внимание!</strong>
+                    {% if client.mailings.count > 0 %}
+                        Клиент участвует в {{ client.mailings.count }} рассылках.
+                        При удалении клиента он будет исключён из всех рассылок.
+                    {% else %}
+                        Это действие нельзя отменить.
+                    {% endif %}
+                </div>
+
+                {% if client.mailings.count > 0 %}
+                <div class="card bg-light mt-3">
+                    <div class="card-body">
+                        <p><strong>Рассылки с участием клиента:</strong></p>
+                        <ul class="text-start">
+                            {% for mailing in client.mailings.all|slice:":5" %}
+                            <li>Рассылка #{{ mailing.id }} - {{ mailing.message.title|default:"Без темы" }}</li>
+                            {% endfor %}
+                            {% if client.mailings.count > 5 %}
+                            <li>... и ещё {{ client.mailings.count|add:"-5" }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'mailer:client_detail' client.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Да, удалить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
