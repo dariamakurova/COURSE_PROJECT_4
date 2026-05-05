@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Стили для предпросмотра */
+    .preview-card {
+        position: sticky;
+        top: 20px;
+    }
+
+    .preview-body {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        min-height: 200px;
+        font-family: monospace;
+        white-space: pre-wrap;
+    }
+
+    .char-counter {
+        font-size: 0.8rem;
+        float: right;
+        color: #6c757d;
+    }
+
+    .char-counter.warning {
+        color: #ffc107;
+    }
+
+    .char-counter.danger {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">
+                    <i class="bi {% if object %}bi-pencil-square{% else %}bi-plus-circle{% endif %}"></i>
+                    {{ title }}
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post" id="messageForm">
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                            {{ field.label }}
+                            {% if field.field.required %}
+                                <span class="text-danger">*</span>
+                            {% endif %}
+                        </label>
+
+                        {% if field.name == 'body' %}
+                            <div class="mb-1">
+                                <span class="char-counter" id="charCounter">
+                                    <i class="bi bi-text-paragraph"></i>
+                                    <span id="charCount">0</span> символов
+                                </span>
+                            </div>
+                            {{ field }}
+                            <small class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Поддерживается HTML? нет, будет отправлено как обычный текст
+                            </small>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="alert alert-danger mt-2">
+                                {% for error in field.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% if object %}{% url 'mailer:message_detail' object.pk %}{% else %}{% url 'mailer:message_list' %}{% endif %}"
+                           class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> {{ button_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель предпросмотра -->
+    <div class="col-md-4">
+        <div class="card preview-card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-eye"></i> Предпросмотр
+                </h5>
+            </div>
+            <div class="card-body">
+                <h5 id="previewTitle" class="text-primary">Тема письма</h5>
+                <hr>
+                <div id="previewBody" class="preview-body">
+                    <em class="text-muted">Текст сообщения появится здесь...</em>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Предпросмотр сообщения
+    const titleInput = document.querySelector('#id_title');
+    const bodyTextarea = document.querySelector('#id_body');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewBody = document.getElementById('previewBody');
+    const charCountSpan = document.getElementById('charCount');
+
+    function updatePreview() {
+        // Обновляем заголовок
+        const title = titleInput.value.trim();
+        previewTitle.textContent = title || 'Тема письма';
+
+        // Обновляем тело
+        const body = bodyTextarea.value;
+        if (body) {
+            previewBody.innerHTML = body.replace(/\n/g, '<br>');
+        } else {
+            previewBody.innerHTML = '<em class="text-muted">Текст сообщения появится здесь...</em>';
+        }
+
+        // Обновляем счётчик символов
+        const charCount = body.length;
+        charCountSpan.textContent = charCount;
+
+        const counter = document.getElementById('charCounter');
+        if (charCount > 500) {
+            counter.className = 'char-counter danger';
+        } else if (charCount > 300) {
+            counter.className = 'char-counter warning';
+        } else {
+            counter.className = 'char-counter';
+        }
+    }
+
+    titleInput.addEventListener('input', updatePreview);
+    bodyTextarea.addEventListener('input', updatePreview);
+
+    // Запускаем предпросмотр при загрузке
+    updatePreview();
+</script>
+{% endblock %}

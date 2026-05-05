@@ -37,11 +37,15 @@ class ClientDeleteView(DeleteView):
     def get_success_url(self):
         return reverse_lazy('mailer:main')
 
+
+# mailer/views.py
+
 class ClientListView(ListView):
     """Список всех клиентов"""
     model = Client
     template_name = 'mailer/client_list.html'
     context_object_name = 'clients'
+    ordering = ['name']
 
 
 class ClientDetailView(DetailView):
@@ -56,7 +60,8 @@ class MessageCreateView(CreateView):
     model = Message
     form_class = MessageForm
     template_name = 'mailer/message_form.html'
-    success_url = reverse_lazy('mailer:main')
+    success_url = reverse_lazy('mailer:message_list')
+
 
 
 class MessageUpdateView(UpdateView):
@@ -85,6 +90,7 @@ class MessageListView(ListView):
     """Список всех сообщений"""
     model = Message
     template_name = 'mailer/message_list.html'
+    context_object_name = 'messages'
 
 
 class MessageDetailView(DetailView):

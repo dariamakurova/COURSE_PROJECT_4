@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ message.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-envelope-paper"></i> {{ message.title }}
+                    </h3>
+                    <div>
+                        <a href="{% url 'mailer:message_update' message.pk %}"
+                           class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'mailer:message_delete' message.pk %}"
+                           class="btn btn-sm btn-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Информация о сообщении -->
+                <div class="mb-4">
+                    <label class="text-muted fw-bold">Тема письма:</label>
+                    <p class="fs-5">{{ message.title }}</p>
+                </div>
+
+                <!-- Тело письма -->
+                <div class="mb-4">
+                    <label class="text-muted fw-bold">Содержание письма:</label>
+                    <div class="card bg-light mt-2">
+                        <div class="card-body message-body">
+                            {{ message.body|linebreaks|default:"<em class='text-muted'>Нет содержания</em>" }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="info-box text-center">
+                            <i class="bi bi-send fs-2"></i>
+                            <h4>{{ message.mailings.count }}</h4>
+                            <p class="text-muted">рассылок с этим сообщением</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-box text-center">
+                            <i class="bi bi-people fs-2"></i>
+                            <h4>
+                                {% with total=0 %}
+                                    {% for mailing in message.mailings.all %}
+                                        {% with total=total|add:mailing.recipients.count %}
+                                        {% endwith %}
+                                    {% endfor %}
+                                {% endwith %}
+                                {{ message.mailings.all|length }}
+                            </h4>
+                            <p class="text-muted">всего получателей</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Рассылки с этим сообщением -->
+                {% if mailings %}
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-send"></i> Рассылки с этим сообщением
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for mailing in mailings %}
+                            <a href="{% url 'mailer:mailing_detail' mailing.pk %}"
+                               class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Рассылка #{{ mailing.id }}</strong>
+                                        <span class="text-muted mx-2">—</span>
+                                        {{ mailing.start_date|date:"d.m.Y H:i" }}
+                                    </div>
+                                    <div>
+                                        <span class="badge {% if mailing.status == 'FN' %}bg-secondary{% elif mailing.status == 'AC' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ mailing.get_status_display }}
+                                        </span>
+                                        <span class="badge bg-info ms-2">
+                                            {{ mailing.recipients.count }} получателей
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if message.mailings.count > 5 %}
+                    <div class="card-footer text-center">
+                        <a href="{% url 'mailer:mailing_list' %}?message={{ message.pk }}"
+                           class="btn btn-sm btn-outline-primary">
+                            Показать все ({{ message.mailings.count }})
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'mailer:message_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Назад к списку
+                    </a>
+                    <div>
+                        <a href="{% url 'mailer:message_update' message.pk %}"
+                           class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-box {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+
+    .info-box:hover {
+        transform: translateY(-5px);
+    }
+
+    .message-body {
+        font-family: monospace;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
