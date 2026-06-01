@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная - Сервис рассылок{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-center">
+                <i class="bi bi-speedometer2"></i> Панель управления
+            </h1>
+            <p class="text-center text-muted">Добро пожаловать в сервис управления рассылками</p>
+        </div>
+    </div>
+
+    <!-- Карточки со статистикой -->
+    <div class="row mb-5">
+        <!-- Общее количество рассылок -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-send fs-1 text-primary"></i>
+                    <h2 class="mt-2 mb-0">{{ total_mailings }}</h2>
+                    <p class="text-muted">Всего рассылок</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Количество активных рассылок -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-play-circle fs-1 text-success"></i>
+                    <h2 class="mt-2 mb-0">{{ active_mailings }}</h2>
+                    <p class="text-muted">Активных рассылок</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Количество уникальных получателей -->
+        <div class="col-md-4 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-people fs-1 text-info"></i>
+                    <h2 class="mt-2 mb-0">{{ total_clients }}</h2>
+                    <p class="text-muted">Всего получателей</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительная статистика (опционально) -->
+    <div class="row mb-5">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart"></i> Статусы рассылок
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <span class="badge bg-warning mb-2">⏳ Создана</span>
+                                <h4>{{ planned_mailings }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <span class="badge bg-success mb-2">▶ Активна</span>
+                                <h4>{{ active_mailings }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <span class="badge bg-secondary mb-2">✓ Завершена</span>
+                                <h4>{{ completed_mailings }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Временная шкала -->
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-range"></i> Текущее время
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <i class="bi bi-clock fs-1 text-primary"></i>
+                        <h4 class="mt-2">{{ now|date:"d.m.Y H:i:s" }}</h4>
+                        <p class="text-muted">Текущее время сервера</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Последние рассылки -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Последние рассылки
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_mailings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Тема</th>
+                                    <th>Дата начала</th>
+                                    <th>Дата окончания</th>
+                                    <th>Статус</th>
+                                    <th>Получателей</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mailing in recent_mailings %}
+                                <tr>
+                                    <td>#{{ mailing.id }}</td>
+                                    <td>{{ mailing.message.title|default:"Без темы"|truncatechars:30 }}</td>
+                                    <td>{{ mailing.start_date|date:"d.m.Y H:i" }}</td>
+                                    <td>{{ mailing.end_date|date:"d.m.Y H:i" }}</td>
+                                    <td>
+                                        {% if mailing.status == 'FN' %}
+                                            <span class="badge bg-secondary">Завершена</span>
+                                        {% elif mailing.status == 'AC' %}
+                                            <span class="badge bg-success">Запущена</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Создана</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ mailing.recipients.count }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'mailer:mailing_detail' mailing.pk %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-info-circle"></i> Нет созданных рассылок
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'mailer:mailing_list' %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-list"></i> Все рассылки
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Графическое пояснение работы активных рассылок -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card shadow-sm bg-light">
+            <div class="card-body">
+                <h6 class="text-center">
+                    <i class="bi bi-info-circle"></i> Как определяется активная рассылка?
+                </h6>
+                <div class="timeline-demo text-center mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary">Прошлое</span>
+                        <span class="flex-grow-1 position-relative">
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar bg-warning" style="width: 33%">Создана</div>
+                                <div class="progress-bar bg-success" style="width: 34%">Запущена</div>
+                                <div class="progress-bar bg-secondary" style="width: 33%">Завершена</div>
+                            </div>
+                        </span>
+                        <span class="badge bg-secondary">Будущее</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <small class="text-muted">start_time</small>
+                        <small class="text-muted text-success">★ АКТИВНА ★</small>
+                        <small class="text-muted">end_time</small>
+                    </div>
+                </div>
+                <p class="text-center text-muted mt-3 mb-0 small">
+                    Рассылка активна, если текущее время находится между start_time и end_time, а статус = "Запущена"
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

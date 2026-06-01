@@ -55,3 +55,47 @@ class Mailing(models.Model):
         verbose_name = 'рассылка'
         verbose_name_plural = 'рассылки'
         ordering = ['-start_date']
+
+
+class MailingAttempt(models.Model):
+    """Модель для логирования попыток отправки сообщения"""
+
+    STATUS_CHOICES = [
+        ('success', 'Успешно'),
+        ('failed', 'Не успешно'),
+    ]
+
+    attempt_time = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата и время попытки'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        verbose_name='Статус'
+    )
+    server_response = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Ответ почтового сервера'
+    )
+    mailing = models.ForeignKey(
+        'Mailing',
+        on_delete=models.CASCADE,
+        related_name='attempts',
+        verbose_name='Рассылка'
+    )
+    client = models.ForeignKey(
+        'Client',
+        on_delete=models.CASCADE,
+        related_name='attempts',
+        verbose_name='Получатель'
+    )
+
+    class Meta:
+        verbose_name = 'попытка отправки'
+        verbose_name_plural = 'попытки отправки'
+        ordering = ['-attempt_time']
+
+    def __str__(self):
+        return f'{self.mailing} -> {self.client} ({self.status})'

@@ -6,6 +6,53 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, D
 from mailer.forms import ClientForm, MessageForm, MailingForm
 from mailer.models import Client, Message, Mailing
 
+from django.shortcuts import render
+from django.utils import timezone
+from django.db.models import Count
+from .models import Mailing, Client
+
+
+def dashboard(request):
+    """Главная страница с аналитикой"""
+
+    # Общее количество всех рассылок
+    total_mailings = Mailing.objects.count()
+
+    # Количество активных рассылок
+    now = timezone.now()
+    active_mailings = Mailing.objects.filter(
+        start_date__lte=now,
+        end_date__gte=now,
+        status=Mailing.Status.ACTIVE
+    ).count()
+
+    # Общее количество уникальных получателей (клиентов)
+    total_clients = Client.objects.count()
+
+    # Дополнительная статистика для наглядности (опционально)
+    completed_mailings = Mailing.objects.filter(
+        end_date__lt=now
+    ).count()
+
+    planned_mailings = Mailing.objects.filter(
+        start_date__gt=now
+    ).count()
+
+    # Последние 5 рассылок
+    recent_mailings = Mailing.objects.all().order_by('-start_date')[:5]
+
+    context = {
+        'total_mailings': total_mailings,
+        'active_mailings': active_mailings,
+        'total_clients': total_clients,
+        'completed_mailings': completed_mailings,
+        'planned_mailings': planned_mailings,
+        'recent_mailings': recent_mailings,
+        'now': now,
+    }
+
+    return render(request, 'mailer/dashboard.html', context)
+
 
 # Client Views
 
@@ -203,3 +250,31 @@ class MailingDetailView(DetailView):
             if mailing.status != Mailing.Status.CREATED:
                 mailing.status = Mailing.Status.CREATED
         mailing.save(update_fields=['status'])
+
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.views import View
+from django.urls import reverse
+
+from .services import check_and_send_mailing
+
+
+class MailingSendView(View):
+    """Вьюха для ручного запуска рассылки"""
+
+    def get(self, request, pk):
+        mailing = Mailing.objects.get(pk=pk)
+
+        # Проверяем и отправляем
+        success, message, success_count, failed_count = check_and_send_mailing(pk)
+
+        if success:
+            messages.success(request, message)
+        else:
+            messages.error(request, message)
+
+        # Добавляем информацию о количестве отправленных писем
+        if success_count > 0 or failed_count > 0:
+            messages.info(request, f'Отправлено успешно: {success_count}, ошибок: {failed_count}')
+
+        return redirect('mailer:mailing_detail', pk=pk)

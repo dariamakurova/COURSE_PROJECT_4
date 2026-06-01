@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-8 mx-auto">
+    <div class="col-md-10 mx-auto">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
                 <div class="d-flex justify-content-between align-items-center">
@@ -46,16 +46,16 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <h5>{{ mailing.message.title|default:"<span class='text-muted'>Без темы</span>" }}</h5>
+                        <h5>{{ mailing.message.title|default:"Без темы" }}</h5>
                         <hr>
                         <div class="message-body">
-                            {{ mailing.message.body|default:"<span class='text-muted'>Нет текста сообщения</span>"|linebreaks }}
+                            {{ mailing.message.body|default:"Нет текста сообщения"|linebreaks }}
                         </div>
                     </div>
                 </div>
 
                 <!-- Список получателей -->
-                <div class="card">
+                <div class="card mb-4">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">
                             <i class="bi bi-people"></i> Получатели ({{ mailing.recipients.count }})
@@ -94,13 +94,79 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- История отправок -->
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history"></i> История отправок
+                            {% if mailing.attempts.all %}
+                                <span class="badge bg-secondary ms-2">{{ mailing.attempts.all|length }}</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if mailing.attempts.all %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Дата и время</th>
+                                        <th>Получатель</th>
+                                        <th>Статус</th>
+                                        <th>Ответ сервера</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attempt in mailing.attempts.all %}
+                                    <tr>
+                                        <td style="white-space: nowrap">
+                                            {{ attempt.attempt_time|date:"d.m.Y H:i:s" }}
+                                        </td>
+                                        <td>
+                                            {{ attempt.client.name }}<br>
+                                            <small class="text-muted">{{ attempt.client.email }}</small>
+                                        </td>
+                                        <td>
+                                            {% if attempt.status == 'success' %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i> Успешно
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-x-circle"></i> Не успешно
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="{% if attempt.status == 'failed' %}text-danger{% else %}text-muted{% endif %}">
+                                                {{ attempt.server_response|default:"—" }}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-info-circle"></i> История отправок пуста
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
+
             <div class="card-footer">
                 <div class="d-flex justify-content-between">
                     <a href="{% url 'mailer:mailing_list' %}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Назад к списку
                     </a>
                     <div>
+                        <!-- Кнопка отправки -->
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#sendModal">
+                            <i class="bi bi-send"></i> Отправить сейчас
+                        </button>
                         <a href="{% url 'mailer:mailing_update' mailing.pk %}" class="btn btn-warning">
                             <i class="bi bi-pencil"></i> Редактировать
                         </a>
@@ -109,6 +175,35 @@
                         </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения отправки -->
+<div class="modal fade" id="sendModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-send"></i> Отправка рассылки
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите запустить рассылку <strong>#{{ mailing.id }}</strong>?</p>
+                <p><strong>Тема:</strong> {{ mailing.message.title|default:"Без темы" }}</p>
+                <p><strong>Получателей:</strong> {{ mailing.recipients.count }}</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i>
+                    Отправка будет выполнена только если текущее время находится в интервале рассылки.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <a href="{% url 'mailer:mailing_send' mailing.pk %}" class="btn btn-success">
+                    <i class="bi bi-send"></i> Отправить
+                </a>
             </div>
         </div>
     </div>
@@ -126,6 +221,11 @@
         padding: 15px;
         border-radius: 5px;
         font-family: monospace;
+        white-space: pre-wrap;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
     }
 </style>
 {% endblock %}

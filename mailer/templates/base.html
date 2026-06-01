@@ -15,35 +15,40 @@
 </head>
 <body>
     <!-- Навигационная панель -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'mailer:mailing_list' %}">
-                <i class="bi bi-envelope-paper"></i> Сервис рассылок
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'mailer:mailing_list' %}">
-                            <i class="bi bi-send"></i> Рассылки
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'mailer:client_list' %}">
-                            <i class="bi bi-people"></i> Клиенты
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'mailer:message_list' %}">
-                            <i class="bi bi-envelope"></i> Сообщения
-                        </a>
-                    </li>
-                </ul>
-            </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'mailer:dashboard' %}">
+            <i class="bi bi-envelope-paper"></i> Сервис рассылок
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'mailer:dashboard' %}">
+                        <i class="bi bi-speedometer2"></i> Главная
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'mailer:mailing_list' %}">
+                        <i class="bi bi-send"></i> Рассылки
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'mailer:client_list' %}">
+                        <i class="bi bi-people"></i> Клиенты
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'mailer:message_list' %}">
+                        <i class="bi bi-envelope"></i> Сообщения
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <!-- Основной контент -->
     <main class="container my-4">
